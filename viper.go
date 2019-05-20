@@ -29,11 +29,14 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"runtime"
 	"strings"
 	"sync"
 	"time"
 
 	yaml "gopkg.in/yaml.v2"
+
+	"tpn/mobile/android/utils"
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/hashicorp/hcl"
@@ -1231,9 +1234,15 @@ func (v *Viper) ReadInConfig() error {
 	}
 
 	jww.DEBUG.Println("Reading file: ", filename)
-	file, err := afero.ReadFile(v.fs, filename)
-	if err != nil {
-		return err
+	var file []byte
+	var errRead error
+	if runtime.GOOS == "android" {
+		file, errRead = utils.ReadAssets(filename + "." + v.getConfigType())
+	} else {
+		file, errRead = afero.ReadFile(v.fs, filename)
+	}
+	if errRead != nil {
+		return errRead
 	}
 
 	config := make(map[string]interface{})
